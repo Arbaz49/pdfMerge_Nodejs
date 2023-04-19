@@ -3,7 +3,11 @@ const path=require("path");
 const  app = express();
 const multer  = require('multer');
 const merger=require("./merger")
+const fs=require("fs");
 app.use('/static', express.static('public'))
+
+
+
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
         cb(null, 'uploads')
@@ -22,16 +26,23 @@ app.get("/",(req,res)=>{
 
 
 app.post('/uploads', upload.array('pdfs', 6), async function (req, res, next) {
-    const file1=req.files[0];
-    const file2=req.files[1];
-    if(!file1.path || !file2?.path) {
-res.sendFile("select two files")
+    try{
+        if(req.files.length <2){
+            return  res.send("select two files")
+           }
+          
+             let d= await merger(req.files[0].path,req.files[1].path)
+             await res.redirect(`http://localhost:4000/static/${d}.pdf`)
+             await fs.unlinkSync(req.files[0].path)
+             await fs.unlinkSync(req.files[1].path)
+          
+              // req.files is array of `photos` files
+              // req.body will contain the text fields, if there were any
+    }catch(err){
+
+        console.log(err)
     }
 
-   let d= await merger(req.files[0].path,req.files[1].path)
-    res.redirect(`http://localhost:4000/static/${d}.pdf`)
-    // req.files is array of `photos` files
-    // req.body will contain the text fields, if there were any
   })
 app.listen(4000,()=>{
     console.log("server listening on http://localhost:4000")
